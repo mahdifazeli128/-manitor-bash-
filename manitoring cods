@@ -1,0 +1,49 @@
+
+
+
+LOGFILE="samples.csv"
+
+if [ ! -f "$LOGFILE" ]; then
+    echo "time,cpu,ram,disk,net_rx,net_tx" >> "$LOGFILE"
+fi
+
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+while true; do
+    TIME=$(date +"%Y-%m-%d %H:%M:%S")
+
+    CPU=$(top -bn1 | grep "Cpu(s)" | awk '{print 100 - $8}')
+    RAM=$(free | grep Mem | awk '{print ($3/$2)*100}')
+    DISK=$(df / | tail -1 | awk '{print ($5)}' | sed 's/%//')
+
+    RX=$(cat /sys/class/net/*/statistics/rx_bytes | paste -sd+ | bc)
+    TX=$(cat /sys/class/net/*/statistics/tx_bytes | paste -sd+ | bc)
+
+    
+    echo "$TIME,$CPU,$RAM,$DISK,$RX,$TX" >> "$LOGFILE"
+
+    clear
+    echo -e "Time: $TIME"
+    echo -e "CPU:  ${GREEN}$CPU%${NC}"
+    echo -e "RAM:  ${GREEN}$RAM%${NC}"
+    echo -e "Disk: ${GREEN}$DISK%${NC}"
+    echo -e "Network RX/TX: $RX / $TX bytes"
+
+    
+    if (( ${CPU%.*} > 80 )); then
+        notify-send "WARNING: CPU High" "CPU usage > 80%"
+    fi
+
+    if (( ${RAM%.*} > 80 )); then
+        notify-send "WARNING: RAM High" "RAM usage > 80%"
+    fi
+
+    if (( DISK > 80 )); then
+        notify-send "WARNING: Disk High" "Disk usage > 80%"
+    fi
+
+    sleep 2
+done
