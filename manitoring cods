@@ -1,6 +1,3 @@
-
-
-
 LOGFILE="samples.csv"
 
 if [ ! -f "$LOGFILE" ]; then
